@@ -7,11 +7,16 @@ syntax.add {
     { pattern = { '"', '"', '\\' },                   type = "string"   },
     { pattern = { "'", "'", '\\' },                   type = "string"   },
     { pattern = "#.*\n",                              type = "comment"  }, -- Comment
-    { pattern = "[fsu][1]%f[%s]",                     type = "literal"  }, -- Integer types, bX, uX, sX, x = 1
-    { pattern = "[fsu][248][bl]?e?%f[%s]",            type = "literal"  }, -- Integer types, bX, uX, sX, x = 2, 4, 8
     { pattern = "[%l][%l%d%-_]*%f[(]",                type = "function" }, -- Parametric types
     { pattern = "[%l%-_][%l%d%-_:]*%s*%f[:]",         type = "keyword"  }, -- Every YAML propertie and enum
     { pattern = "%f[%-]% [%l%-][%l%d%-_]*%s*%f[:]",   type = "keyword"  }, -- Propertie with '-' at the beggining
+    { pattern = "[b]0*[0-9]%f[%s]",                   type = "literal"  }, -- Bit type, bX, x = 0 - 9
+    { pattern = "[b]0*[1][0-9]%f[%s]",                type = "literal"  }, -- Bit type, bX, x = 10 - 19
+    { pattern = "[b]0*[2][0-9]%f[%s]",                type = "literal"  }, -- Bit type, bX, x = 20 - 29
+    { pattern = "[b]0*[3][0-2]%f[%s]",                type = "literal"  }, -- Bit type, bX, x = 30 - 32
+    { pattern = "[f][48][bl]?e?%f[%s]",               type = "literal"  }, -- Floating point types, f4, f8
+    { pattern = "[su][1]%f[%s]",                      type = "literal"  }, -- Integer types, uX, sX, x = 1
+    { pattern = "[su][248][bl]?e?%f[%s]",             type = "literal"  }, -- Integer types, uX, sX, x = 2, 4, 8
     { pattern = "[%l_][%l%d%-_]*",                    type = "symbol"   }, -- Normal token, _io, _parent, _root and methods
     { pattern = "-?0b[01_]+%f[^%w_]",                 type = "number"   }, -- Binary literal
     { pattern = "-?0o[0-7_]+%f[^%w_]",                type = "number"   }, -- Octal literal
