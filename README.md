@@ -5,6 +5,7 @@ Whitehole's plugins for [lite](https://github.com/rxi/lite)
 
 Plugin | Description
 -------|------------
+[`hexeditor`](plugins/hexeditor)* | Adds hex editing capabilities
 [`language_ksy`](plugins/language_ksy.lua?raw=1) | Syntax for [Kaitai](http://kaitai.io/) struct files
 
 ## License
