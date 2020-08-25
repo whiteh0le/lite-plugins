@@ -1,3 +1,4 @@
+local common = require "core.common"
 local config = require "core.config"
 local core = require "core"
 local Object = require "core.object"
@@ -25,7 +26,11 @@ end
 function HexDoc:reset()
   self.bpr = config.bytes_per_row
   self.bytes = ""
-  self.selection = { a = { line = 0, col = 0 }, b = { line = 0, col = 0 } }
+  self.selection = {
+    a = { byte = 0, nibble = 0 },
+    b = { byte = 0, nibble = 0 },
+    mode = "normal"
+  }
 end
 
 
@@ -42,16 +47,31 @@ end
 
 function HexDoc:get_selection()
   local a, b = self.selection.a, self.selection.b
-  return a.line, a.col, b.line, b.col
+  return a.byte, a.nibble, b.byte, b.nibble
 end
 
 
-function HexDoc:sanitize_position(line, col)
-  line = common.clamp(line, 0, math.ceil(#self.bytes / self.bpr) - 1)
-  col = common.clamp(col, 0, (#self.bytes % self.bpr) * 2)
+function HexDoc:set_selection(byte1, nibble1, byte2, nibble2)
+  local a, b = self.selection.a, self.selection.b
+  byte1, nibble1 = self:sanitize_position(byte1, nibble1)
+  byte2, nibble2 = self:sanitize_position(byte2 or byte1, nibble2 or nibble1)
 
-  return line, col
+  a.byte, a.nibble, b.byte, b.nibble = byte1, nibble1, byte2, nibble2
 end
 
+
+function HexDoc:sanitize_position(byte, nibble)
+  byte = common.clamp(byte, 0, #self.bytes - 1)
+  nibble = common.clamp(nibble, 0, 2)
+
+  return byte, nibble
+end
+
+
+function HexDoc:move_to(fn)
+  local byte, nibble = self:get_selection()
+  byte, nibble = fn(byte, nibble, self)
+  self:set_selection(byte, nibble)
+end
 
 return HexDoc

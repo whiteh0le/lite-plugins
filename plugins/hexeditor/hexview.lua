@@ -19,6 +19,81 @@ local function build_header(self)
 end
 
 
+HexView.translate = {
+  ["beginning_of_file"] = function(byte, nibble)
+    return 0, 0
+  end,
+
+  ["end_of_file"] = function(byte, nibble, hd)
+    return math.huge, 2
+  end,
+
+  ["beginning_of_row"] = function(byte, nibble, hd)
+    byte = byte - (byte % hd.bpr)
+    nibble = 0
+
+    return byte, nibble
+  end,
+
+  ["end_of_row"] = function(byte, nibble, hd)
+    byte = byte + (hd.bpr - 1 - (byte % hd.bpr))
+    nibble = 2
+
+    return byte, nibble
+  end,
+
+  ["next_byte"] = function(byte, nibble, hd)
+    byte = byte + 1
+    nibble = byte ~= #hd.bytes and 0 or 2
+
+    return byte, nibble
+  end,
+
+  ["next_nibble"] = function(byte, nibble, hd)
+    byte = byte + math.ceil(nibble / 2)
+    if byte ~= #hd.bytes then
+      nibble = (nibble + 1) % 2
+    else
+      nibble = nibble ~= 0 and 2 or 1
+    end
+
+    return byte, nibble
+  end,
+
+  ["next_row"] = function(byte, nibble, hd)
+    if #hd.bytes - byte > hd.bpr then
+      byte = byte + hd.bpr
+    end
+
+    return byte, nibble
+  end,
+
+  ["previous_byte"] = function(byte, nibble)
+    byte = byte - (nibble ~= 2 and 1 or 0)
+    nibble = 0
+
+    return byte, nibble
+  end,
+
+  ["previous_nibble"] = function(byte, nibble)
+    if byte ~= 0 or nibble ~= 0 then
+      byte = byte - (nibble == 0 and 1 or 0)
+      nibble = (nibble - 1) % 2
+    end
+
+    return byte, nibble
+  end,
+
+  ["previous_row"] = function(byte, nibble, hd)
+    if byte >= hd.bpr then
+      byte = byte - hd.bpr
+    end
+
+    return byte, nibble
+  end,
+}
+
+
 function HexView:new(hexdoc)
   HexView.super.new(self)
   self.cursor = "ibeam"
@@ -110,15 +185,16 @@ function HexView:get_visible_line_range()
 end
 
 
-function HexView:get_x_offset_hex(x, col)
+function HexView:get_x_offset_hex(x, byte, nibble)
+  byte = byte % self.doc.bpr
   local cw = get_char_width(self)
-  return x + (col * cw) + (math.floor(col / 2) * cw)
+  return x + (byte * cw * 2) + (byte * cw) + (nibble * cw)
 end
 
 
-function HexView:get_x_offset_text(x, col)
+function HexView:get_x_offset_text(x, byte)
   local cw = get_char_width(self)
-  return x + (math.floor(col / 2) * cw)
+  return x + (byte * cw)
 end
 
 
@@ -145,8 +221,9 @@ end
 
 function HexView:draw_line_margin(idx, x, y)
   local color = style.line_number
-  local line1, _, line2, _ = self.doc:get_selection(true)
-  if idx >= line1 and idx <= line2 then
+  local byte1, _, byte2, _ = self.doc:get_selection()
+  local row1, row2 = math.floor(byte1 / self.doc.bpr), math.floor(byte2 / self.doc.bpr)
+  if idx >= row1 and idx <= row2 then
     color = style.line_number2
   end
 
@@ -173,10 +250,11 @@ function HexView:draw_hex(line, x, y)
   renderer.draw_text(font, table.concat(hex_row, " "), x, y, color)
 
   -- Draw caret
-  local line1, col1, line2, col2 = self.doc:get_selection()
-  if (line == line1) then
+  local byte1, nibble1 = self.doc:get_selection()
+  local row = math.floor(byte1 / self.doc.bpr)
+  if (line == row) then
     local lh = self:get_line_height()
-    local x1 = self:get_x_offset_hex(x, col1)
+    local x1 = self:get_x_offset_hex(x, byte1, nibble1)
     renderer.draw_rect(x1, y, style.caret_width, lh, style.caret)
   end
 end
@@ -197,10 +275,12 @@ function HexView:draw_text(line, x, y)
   renderer.draw_text(font, table.concat(hex_row), x, y, color)
 
   -- Draw caret
-  local line1, col1, line2, col2 = self.doc:get_selection()
-  if (line == line1) then
+  local byte1, nibble1 = self.doc:get_selection()
+  byte1 = byte1 + math.floor(nibble1 / 2)
+  local row = math.floor(byte1 / self.doc.bpr)
+  if (line == row) then
     local lh = self:get_line_height()
-    local x1 = self:get_x_offset_text(x, col1)
+    local x1 = self:get_x_offset_text(x, byte1 % self.doc.bpr)
     renderer.draw_rect(x1, y, style.caret_width, lh, style.caret)
   end
 end
