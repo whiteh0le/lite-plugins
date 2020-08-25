@@ -192,9 +192,9 @@ function HexView:get_x_offset_hex(x, byte, nibble)
 end
 
 
-function HexView:get_x_offset_text(x, byte)
+function HexView:get_x_offset_text(x, byte, nibble)
   local cw = get_char_width(self)
-  return x + (byte * cw)
+  return x + (byte + math.floor(nibble / 2)) * cw
 end
 
 
@@ -276,11 +276,10 @@ function HexView:draw_text(line, x, y)
 
   -- Draw caret
   local byte1, nibble1 = self.doc:get_selection()
-  byte1 = byte1 + math.floor(nibble1 / 2)
   local row = math.floor(byte1 / self.doc.bpr)
   if (line == row) then
     local lh = self:get_line_height()
-    local x1 = self:get_x_offset_text(x, byte1 % self.doc.bpr)
+    local x1 = self:get_x_offset_text(x, byte1 % self.doc.bpr, nibble1)
     renderer.draw_rect(x1, y, style.caret_width, lh, style.caret)
   end
 end
