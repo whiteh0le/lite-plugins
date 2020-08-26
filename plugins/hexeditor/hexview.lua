@@ -212,10 +212,12 @@ end
 function HexView:draw_header_margin(x, y)
   local color = style.line_number
   local font = self:get_font()
-  local header_width = font:get_width(self.header) + style.padding.x
+  x = x + self:get_line_margin_width()
+  y = y + style.padding.y
 
-  renderer.draw_text(font, self.header, x, y, color)
-  renderer.draw_text(font, "Text", x + header_width, y, color)
+  local hx
+  hx = renderer.draw_text(font, self.header, x, y, color)
+  renderer.draw_text(font, "Text", hx + style.padding.x, y, color)
 end
 
 
@@ -227,7 +229,6 @@ function HexView:draw_line_margin(idx, x, y)
     color = style.line_number2
   end
 
-  -- TODO cache the results
   x = x + style.padding.x
   local maxline_hex = string.format("%X", get_last_line_number(self) * self.doc.bpr)
   local fmt = "%0" .. #maxline_hex .. "X"
@@ -237,17 +238,27 @@ end
 
 function HexView:draw_hex(line, x, y)
   local byte_offset = line * self.doc.bpr
-  local color = style.syntax["normal"]
+  local color_even = style.syntax["normal"]
+  local color_odd = style.text
   local font = self:get_font()
   local text_row = self.doc.bytes:sub(byte_offset + 1, byte_offset + self.doc.bpr)
+  local odd_offset = font:get_width("   ")
+  x = x + self:get_line_margin_width()
 
-  -- TODO cache the results
-  local hex_row = {}
+  local hex_even = {}
+  local hex_odd = {}
+  local i = 0
   text_row:gsub(".", function(byte)
-    table.insert(hex_row, string.format("%02X", byte:byte()))
+    if bit32.band(i, 0x1) == 0 then
+      table.insert(hex_even, string.format("%02X", byte:byte()))
+    else
+      table.insert(hex_odd, string.format("%02X", byte:byte()))
+    end
+    i = i + 1
   end)
 
-  renderer.draw_text(font, table.concat(hex_row, " "), x, y, color)
+  renderer.draw_text(font, table.concat(hex_even, "    "), x, y, color_even)
+  renderer.draw_text(font, table.concat(hex_odd, "    "), x + odd_offset, y, color_odd)
 
   -- Draw caret
   local byte1, nibble1 = self.doc:get_selection()
@@ -265,8 +276,9 @@ function HexView:draw_text(line, x, y)
   local color = style.syntax["normal"]
   local font = self:get_font()
   local text_row = self.doc.bytes:sub(byte_offset + 1, byte_offset + self.doc.bpr)
+  local header_width = font:get_width(self.header)
+  x = x + self:get_line_margin_width() + header_width + style.padding.x
 
-  -- TODO cache the results
   local hex_row = {}
   text_row:gsub(".", function(byte)
     table.insert(hex_row, encoding.get(self.encoding)[byte:byte() + 1])
@@ -288,26 +300,21 @@ end
 function HexView:draw()
   self:draw_background(style.background)
 
-  local font = self:get_font()
   local hmh = self:get_header_margin_height()
   local lh = self:get_line_height()
-  local lmw = self:get_line_margin_width()
   local minline, maxline = self:get_visible_line_range()
   local pos = self.position
   local size = self.size
+  local x, y = pos.x, pos.y
 
   -- Draw header
-  local x = pos.x + lmw
-  local y = pos.y + style.padding.y
   self:draw_header_margin(x, y)
 
-  local header_width = font:get_width(self.header)
-  x = pos.x + lmw + header_width + style.padding.x
   y = pos.y + hmh
-  core.push_clip_rect(pos.x, pos.y + hmh, size.x, size.y - hmh)
+  core.push_clip_rect(x, y, size.x, size.y - hmh)
   for i = minline, maxline do
-    self:draw_line_margin(i, pos.x, y)
-    self:draw_hex(i, pos.x + lmw, y)
+    self:draw_line_margin(i, x, y)
+    self:draw_hex(i, x, y)
     self:draw_text(i, x, y)
 
     y = y + lh
