@@ -16,4 +16,7 @@ keymap.add {
   ["ctrl+h"]     = "hex:open-file",
   ["alt+e"]      = "hex:change-encoding",
   ["alt+b"]      = "hex:change-bytes-per-row",
+  ["alt+up"]     = "hex:reset-doc-offset",
+  ["alt+left"]   = "hex:shift-doc-left",
+  ["alt+right"]  = "hex:shift-doc-right",
 }

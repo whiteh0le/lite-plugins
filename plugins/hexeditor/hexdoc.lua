@@ -1,8 +1,6 @@
 local common = require "core.common"
 local config = require "core.config"
-local core = require "core"
 local Object = require "core.object"
-local DocView = require "core.docview"
 
 local HexDoc = Object:extend()
 
@@ -26,6 +24,7 @@ end
 function HexDoc:reset()
   self.bpr = config.bytes_per_row
   self.bytes = ""
+  self.offset = 0
   self.selection = {
     a = { byte = 0, nibble = 0 },
     b = { byte = 0, nibble = 0 },
@@ -48,6 +47,11 @@ end
 function HexDoc:get_selection()
   local a, b = self.selection.a, self.selection.b
   return a.byte, a.nibble, b.byte, b.nibble
+end
+
+
+function HexDoc:get_effective_position()
+  return self.selection.a.byte + math.floor(self.selection.a.nibble / 2)
 end
 
 

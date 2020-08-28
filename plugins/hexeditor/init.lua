@@ -1,13 +1,9 @@
 local command = require "core.command"
 local common = require "core.common"
-local config = require "core.config"
 local core = require "core"
-local keymap = require "core.keymap"
 local StatusView = require "core.statusview"
 local style = require "core.style"
-local View = require "core.view"
 
-local encoding = require "plugins.hexeditor.encoding"
 local HexDoc = require "plugins.hexeditor.hexdoc"
 local HexView = require "plugins.hexeditor.hexview"
 
@@ -47,31 +43,31 @@ end
 require "plugins.hexeditor.commands.hexview"
 require "plugins.hexeditor.config"
 require "plugins.hexeditor.keymap"
+require "plugins.hexeditor.style"
 
 
 local get_items = StatusView.get_items
 function StatusView:get_items()
   local left, right = get_items(self)
   if (core.active_view:is(HexView)) then
-    local hd = hd()
-    local hv = hv()
-    local dirty = hd:is_dirty()
-    local cursor_position = hd.selection.a.byte + math.floor(hd.selection.a.nibble / 2)
+    local doc = hd()
+    local hView = hv()
+    local dirty = doc:is_dirty()
 
     left, right = {
       dirty and style.accent or style.text, style.icon_font, "f",
       style.dim, style.font, StatusView.separator2,
-      style.text, hd.filename,
+      style.text, doc.filename,
       style.dim, StatusView.separator,
-      style.text, "cursor: ", cursor_position
+      style.text, "cursor: ", string.format("%X", doc:get_effective_position())
     }, {
       style.text, style.icon_font, "g",
       style.dim, style.font, StatusView.separator2,
-      style.text, hv.encoding,
+      style.text, hView.encoding,
       style.dim, StatusView.separator,
-      style.text, hd.bpr, " bpr",
+      style.text, doc.bpr, " bpr",
       style.dim, StatusView.separator,
-      style.text, #hd.bytes, " bytes"
+      style.text, string.format("%X", #doc.bytes), " bytes"
     }
   end
 
